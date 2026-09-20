@@ -148,7 +148,7 @@
         <div id="slide-2" class="slide flex-col items-center w-full max-w-5xl">
             <div class="bg-white/90 p-10 md:p-16 rounded-3xl shadow-xl border-4 border-amber-100 relative">
                 <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-amber-400 text-white px-8 py-3 rounded-full text-2xl shadow-lg whitespace-nowrap">
-                    우리반 고민 사연을 보내주세요
+                    우리반 고민을 이야기해주세요
                 </div>
                 <div class="text-center mt-6 space-y-6 text-2xl md:text-3xl leading-relaxed text-gray-700">
                     <p>우리반 친구들이 여러분의<br><span class="text-amber-500 font-bold text-4xl">마음과 고민에 함께 머물러 줄 거에요.</span></p>
@@ -184,7 +184,7 @@
                 </h2>
             </div>
             <div class="mt-12 text-2xl text-gray-600">
-                <i class="fa-solid fa-stars text-amber-400"></i> 사연을 만나볼 준비가 되었나요? <i class="fa-solid fa-stars text-amber-400"></i>
+                <i class="fa-solid fa-stars text-amber-400"></i> 친구들의 고민을 만나볼 준비가 되었나요? <i class="fa-solid fa-stars text-amber-400"></i>
             </div>
         </div>
 
@@ -192,7 +192,7 @@
         <div id="slide-5" class="slide flex-col items-center w-full h-full pb-2 relative">
             <!-- 제목을 위로 올려 헤더 라인(ON AIR)과 맞춤 -->
             <h2 class="absolute -top-16 md:-top-20 left-1/2 transform -translate-x-1/2 text-3xl md:text-4xl text-gray-800 flex items-center gap-3 font-bold whitespace-nowrap z-20">
-                <i class="fa-solid fa-envelope-open-text text-amber-500"></i> 오늘의 사연
+                <i class="fa-solid fa-envelope-open-text text-amber-500"></i> 오늘의 고민
             </h2>
             
             <!-- 투명한 레이아웃 컨테이너 (flex justify-start로 좌측 정렬) -->
@@ -209,7 +209,7 @@
                         <!-- Initial State / Start Button -->
                         <div id="camera-overlay" class="z-10 flex flex-col items-center text-gray-500">
                             <i class="fa-solid fa-camera-web text-6xl md:text-7xl mb-4 opacity-40"></i>
-                            <p class="mb-4 text-xl md:text-2xl font-bold text-gray-600">학생들의 사연을 비춰주세요</p>
+                            <p class="mb-4 text-xl md:text-2xl font-bold text-gray-600">학생들의 고민을 비춰주세요</p>
                             <button type="button" onclick="startCamera()" class="px-6 py-3 md:px-8 md:py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xl md:text-2xl shadow-lg transition flex items-center gap-3">
                                 <i class="fa-solid fa-video"></i> 화상기/카메라 켜기
                             </button>
@@ -233,7 +233,7 @@
                     <div class="flex justify-end mb-2">
                         <!-- 2. 클릭 시 확대 모달 띄우기 (onclick 추가) -->
                         <div onclick="showQRPopup()" class="bg-white/95 p-2 rounded-2xl shadow-xl border border-amber-100 flex flex-col items-center pointer-events-auto cursor-pointer hover:bg-amber-50 hover:scale-105 transition-transform" title="크게 보기">
-                            <span class="text-[10px] md:text-[11px] font-black text-amber-600 mb-1 tracking-wider whitespace-nowrap">스마트폰으로 사연 보내기</span>
+                            <span class="text-[10px] md:text-[11px] font-black text-amber-600 mb-1 tracking-wider whitespace-nowrap">스마트폰으로 의견 보내기</span>
                             <img id="qr-code-img" src="" alt="QR" class="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-gray-100">
                             <!-- 방 번호 표시 -->
                             <span id="display-room-code" class="text-[10px] md:text-[11px] font-bold text-gray-500 mt-1">방: 준비중</span>
@@ -245,7 +245,7 @@
                     <div id="chat-messages-container" class="flex-grow bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/60 p-3 flex flex-col gap-3 overflow-y-auto no-scrollbar pb-40 pointer-events-auto">
                         <div class="text-center text-gray-500 text-xs py-3 bg-white/60 rounded-xl shadow-sm border border-amber-50">
                             <i class="fa-solid fa-comment-dots text-amber-400 mb-2 text-xl block"></i>
-                            QR코드를 찍고<br>실시간으로 사연을 보내보세요!
+                            QR코드를 찍고<br>실시간으로 조언을 보내보세요!
                         </div>
                     </div>
                 </div>
@@ -323,24 +323,26 @@
             <div class="text-center mt-8">
                 <div class="text-orange-400 text-5xl mb-2"><i class="fa-solid fa-radio"></i></div>
                 <h1 class="text-3xl font-bold text-gray-800">우리가 만드는 라디오</h1>
-                <p class="text-gray-500 mt-2">사연과 댓글을 실시간으로 보내주세요!</p>
+                <p class="text-gray-500 mt-2 font-bold text-lg">당신의 의견을 보내주세요!</p>
                 <!-- 새로 추가: 학생 화면에 접속 중인 방 표시 -->
                 <div class="inline-block mt-3 px-4 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-bold shadow-inner">
                     <i class="fa-solid fa-key mr-1"></i> 현재 접속 방: <span id="student-room-display">...</span>
                 </div>
+                <!-- 새로 추가: 연결 상태 표시 -->
+                <p id="student-status-text" class="text-amber-600 mt-2 text-sm font-bold"><i class="fa-solid fa-circle-notch fa-spin"></i> 선생님 PC와 연결 중입니다...</p>
             </div>
             
             <div class="bg-white p-6 rounded-3xl shadow-xl flex flex-col gap-4 border border-amber-100">
                 <div>
-                    <label class="block text-sm font-bold text-amber-600 mb-1">누가 보내는 사연인가요? (선택)</label>
+                    <label class="block text-sm font-bold text-amber-600 mb-1">누가 보내는 의견인가요? (선택)</label>
                     <input type="text" id="student-name-input" placeholder="예: 2모둠 철수, 비밀요원" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition text-gray-800">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-amber-600 mb-1">사연 / 하고 싶은 말</label>
-                    <textarea id="student-msg-input" rows="4" placeholder="DJ에게 하고 싶은 말이나 고민 사연을 적어주세요!" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition resize-none text-gray-800"></textarea>
+                    <label class="block text-sm font-bold text-amber-600 mb-1">의견 / 조언의 말</label>
+                    <textarea id="student-msg-input" rows="4" placeholder="고민에 대한 조언이나 따뜻한 위로의 말을 적어주세요!" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition resize-none text-gray-800"></textarea>
                 </div>
-                <button type="button" id="submit-msg-btn" onclick="submitStudentMessage()" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg hover:opacity-90 transition mt-2 flex items-center justify-center gap-2">
-                    사연 보내기 <i class="fa-solid fa-paper-plane"></i>
+                <button type="button" id="submit-msg-btn" onclick="submitStudentMessage()" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg hover:opacity-90 transition mt-2 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-spinner fa-spin"></i> 연결 대기중...
                 </button>
                 <div id="success-feedback" class="hidden text-center text-green-500 font-bold mt-2 animate-bounce flex items-center justify-center gap-1">
                     <i class="fa-solid fa-check-circle"></i> 선생님께 성공적으로 전송되었습니다!
@@ -355,7 +357,7 @@
             <button type="button" onclick="closeQRPopup()" class="absolute top-6 right-6 text-gray-400 hover:text-red-500 text-5xl transition">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <h3 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6 text-center">스마트폰으로 사연 보내기</h3>
+            <h3 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6 text-center">스마트폰으로 의견 보내기</h3>
             <div class="bg-amber-50 p-6 rounded-2xl mb-6 shadow-inner border-2 border-amber-200">
                 <!-- 고해상도 QR 생성하여 여기에 넣음 -->
                 <img id="qr-modal-img" src="" alt="확대된 QR" class="w-64 h-64 md:w-80 md:h-80 rounded-xl object-contain">
@@ -597,8 +599,9 @@
             
             // 학생 폰에서 연결이 들어왔을 때
             peer.on('connection', (conn) => {
-                // 사연 데이터가 전송되었을 때
+                // 의견 데이터가 전송되었을 때
                 conn.on('data', (data) => {
+                    console.log('데이터 수신됨:', data); // 디버깅용
                     chatMessages.push(data);
                     renderChatMessages();
                 });
@@ -609,22 +612,33 @@
         function initStudentPeer(hostId) {
             if(!hostId) return;
             
+            const btn = document.getElementById('submit-msg-btn');
+            const statusText = document.getElementById('student-status-text');
+
             peer = new Peer();
             peer.on('open', () => {
-                // 선생님 화면(호스트ID)으로 직접 연결
-                hostConnection = peer.connect(hostId);
+                // 선생님 화면(호스트ID)으로 직접 연결 (reliable 옵션으로 유실 방지)
+                hostConnection = peer.connect(hostId, { reliable: true });
                 
                 hostConnection.on('open', () => {
                     console.log('선생님 라디오 방송국과 다이렉트 연결 성공!');
+                    statusText.innerHTML = '<i class="fa-solid fa-check-circle"></i> 연결 완료! 의견을 보낼 수 있습니다.';
+                    statusText.classList.replace('text-amber-600', 'text-green-600');
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = '의견 보내기 <i class="fa-solid fa-paper-plane"></i>';
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 });
                 
                 hostConnection.on('error', () => {
-                    showModal("선생님 화면과 연결할 수 없습니다. 다시 QR코드를 스캔해주세요.");
+                    showModal("선생님 화면과 연결할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+                    statusText.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 연결 실패';
+                    statusText.classList.replace('text-amber-600', 'text-red-500');
                 });
             });
         }
 
-        // 3. 실시간 사연 화면에 그리기 (선생님 화면)
+        // 3. 실시간 의견 화면에 그리기 (선생님 화면)
         function renderChatMessages() {
             const container = document.getElementById('chat-messages-container');
             if(!container) return;
@@ -632,7 +646,7 @@
             container.innerHTML = '';
             
             if(chatMessages.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 text-xs py-3 bg-white/60 rounded-xl shadow-sm border border-amber-50"><i class="fa-solid fa-comment-dots text-amber-400 mb-2 text-xl block"></i>QR코드를 찍고<br>실시간으로 사연을 보내보세요!</div>';
+                container.innerHTML = '<div class="text-center text-gray-500 text-xs py-3 bg-white/60 rounded-xl shadow-sm border border-amber-50"><i class="fa-solid fa-comment-dots text-amber-400 mb-2 text-xl block"></i>QR코드를 찍고<br>실시간으로 조언을 보내보세요!</div>';
                 return;
             }
 
@@ -646,11 +660,11 @@
                 container.appendChild(msgEl);
             });
             
-            // 새 사연이 오면 스크롤 맨 밑으로
+            // 새 의견이 오면 스크롤 맨 밑으로
             container.scrollTop = container.scrollHeight;
         }
 
-        // 4. 학생 사연 전송 (학생 화면)
+        // 4. 학생 의견 전송 (학생 화면)
         window.submitStudentMessage = function() {
             const nameInput = document.getElementById('student-name-input').value.trim() || '익명 친구';
             const msgInput = document.getElementById('student-msg-input').value.trim();
@@ -658,9 +672,9 @@
             
             if(!msgInput) return;
             
-            // 연결 확인
+            // 연결 확인 방어 로직 강화
             if(!hostConnection || !hostConnection.open) {
-                showModal("선생님 화면과 연결 중이거나 연결이 끊어졌습니다.\n라디오가 시작되었는지 확인 후 화면을 새로고침해주세요!");
+                showModal("선생님 PC와 완전히 연결되지 않았습니다.\n'연결 완료' 메시지가 뜰 때까지 잠시만 기다려주세요!");
                 return;
             }
 
@@ -681,7 +695,7 @@
             setTimeout(() => feedback.classList.add('hidden'), 3000);
             
             btn.disabled = false;
-            btn.innerHTML = '사연 보내기 <i class="fa-solid fa-paper-plane"></i>';
+            btn.innerHTML = '의견 보내기 <i class="fa-solid fa-paper-plane"></i>';
         };
 
         // 보안 변환 (XSS 해킹 방지)
