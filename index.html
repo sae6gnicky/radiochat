@@ -14,6 +14,9 @@
     <!-- Google Fonts: 'Jua' for a friendly, handwritten vibe -->
     <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
     
+    <!-- 추가된 부분: 데이터베이스 없이 다이렉트 통신을 가능하게 해주는 PeerJS 라이브러리 -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
     <style>
         body {
             font-family: 'Jua', sans-serif;
@@ -364,12 +367,8 @@
         </div>
     </div>
 
-    <!-- 기존 스크립트를 type="module"로 변경하여 실시간 데이터베이스 연동 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <!-- 기존 Firebase 스크립트를 완전히 지우고 아래의 새로운 PeerJS 스크립트로 덮어씌웁니다 -->
+    <script>
         // --- Variables ---
         let currentSlideIndex = 1;
         const totalSlides = 6;
@@ -382,13 +381,11 @@
         const cameraOverlay = document.getElementById('camera-overlay');
         const stopCamBtn = document.getElementById('stop-cam-btn');
         
-        let globalRoomCode = ''; // 방 코드 전역 변수
-        let isFirebaseInitialized = false; // 파이어베이스 중복 초기화 방지
+        let globalRoomCode = '';
 
         // Set initial volume
         audio.volume = 0.4;
 
-        // HTML 태그에서 onclick으로 호출할 수 있도록 함수들을 window에 등록합니다.
         window.startRadio = startRadio;
         window.startCamera = startCamera;
         window.stopCamera = stopCamera;
@@ -428,30 +425,31 @@
         }
 
         function startRadio() {
-            // 방 코드 설정 (입력 안하면 랜덤 4자리 지정)
             const inputCode = document.getElementById('room-code-input').value.trim();
             globalRoomCode = inputCode || Math.floor(1000 + Math.random() * 9000).toString();
             
-            // QR 코드 및 방 번호 표시 업데이트 (방 코드를 URL에 포함)
-            const currentUrl = window.location.href.split('?')[0];
-            const studentUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'mode=student&room=' + encodeURIComponent(globalRoomCode);
+            // 다이렉트 통신을 위한 고유 호스트 ID 생성 (선생님 화면 식별표)
+            const hostId = 'radio-host-' + globalRoomCode + '-' + Math.floor(Math.random() * 100000);
             
-            // 로컬 주소(file, blob, about)로 열었을 경우 스마트폰 접속 불가 안내
+            const currentUrl = window.location.href.split('?')[0];
+            // QR코드 URL에 선생님 화면으로 직접 찾아올 수 있는 hostId를 포함시킵니다!
+            const studentUrl = currentUrl + '?mode=student&room=' + encodeURIComponent(globalRoomCode) + '&host=' + encodeURIComponent(hostId);
+            
             if (currentUrl.startsWith('file:') || currentUrl.startsWith('blob:') || currentUrl.startsWith('about:')) {
                 setTimeout(() => {
-                    showModal("현재 내 컴퓨터 내부 주소로 실행 중이라 스마트폰에서 QR코드로 접속할 수 없습니다.\n\n학생들과 사용하거나 공유하려면 이 HTML 파일을 인터넷(예: GitHub Pages)에 올려주세요!");
+                    showModal("현재 내 컴퓨터 내부 주소로 실행 중이라 스마트폰에서 접속할 수 없습니다.\n\n반드시 GitHub Pages 주소로 접속해서 실행해주세요!");
                 }, 1000);
             }
 
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(studentUrl)}`;
             document.getElementById('qr-code-img').src = qrUrl;
-            document.getElementById('qr-modal-img').src = qrUrl; // 팝업 모달에도 QR 주소 적용
+            document.getElementById('qr-modal-img').src = qrUrl;
             
             document.getElementById('display-room-code').innerText = '방: ' + globalRoomCode;
-            document.getElementById('qr-modal-code').innerText = globalRoomCode; // 팝업 모달에도 방 번호 적용
+            document.getElementById('qr-modal-code').innerText = globalRoomCode;
 
-            // Firebase 채팅 초기화 (이제 방 코드를 가지고 시작)
-            initFirebaseAndChat(false, globalRoomCode);
+            // 선생님 수신 모드 켜기
+            initHostPeer(hostId);
 
             nextSlide();
             playMusic(); 
@@ -465,22 +463,13 @@
                 console.log("Audio play prevented:", error);
             });
         }
-
-        function pauseMusic() {
-            audio.pause();
-            musicEq.style.display = 'none';
-        }
-
-        function stopMusic() {
-            audio.pause();
-            audio.currentTime = 0;
-            musicEq.style.display = 'none';
-        }
-
+        function pauseMusic() { audio.pause(); musicEq.style.display = 'none'; }
+        function stopMusic() { audio.pause(); audio.currentTime = 0; musicEq.style.display = 'none'; }
+        
         audio.addEventListener('play', () => { musicEq.style.display = 'flex'; });
         audio.addEventListener('pause', () => { musicEq.style.display = 'none'; });
 
-        // --- Camera / WebRTC Logic ---
+        // --- Camera Logic ---
         async function startCamera(isPreload = false) {
             if (cameraStream) return;
             try {
@@ -498,14 +487,15 @@
                     if (preloadBtn) {
                         preloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> 카메라 연결됨';
                         preloadBtn.classList.remove('text-amber-500', 'border-amber-300', 'hover:bg-amber-50');
-                        preloadBtn.classList.add('bg-green-100', 'text-green-600', 'border-green-300', 'cursor-not-allowed');
+                        // Use Tailwind standard color classes (no bg-green-100 without Tailwind mapping setup, fallback to simple inline style or available classes)
+                        preloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         preloadBtn.disabled = true;
                     }
-                    showModal("카메라(실물화상기)가 미리 연결되었습니다!\n5번째 '오늘의 사연' 페이지로 이동하면 바로 화면이 나옵니다.");
+                    showModal("카메라가 연결되었습니다! 5번째 화면으로 가면 나옵니다.");
                 }
             } catch (err) {
-                console.error("Camera access error:", err);
-                showModal("카메라(실물화상기)를 찾을 수 없거나 접근 권한이 없습니다. 브라우저 설정을 확인해주세요.");
+                console.error(err);
+                showModal("카메라(실물화상기)를 찾을 수 없거나 접근 권한이 없습니다. 브라우저 주소창 왼쪽 설정을 확인해주세요.");
             }
         }
 
@@ -523,7 +513,7 @@
             if (preloadBtn) {
                 preloadBtn.innerHTML = '<i class="fa-solid fa-video"></i> 카메라 미리 켜기';
                 preloadBtn.classList.add('text-amber-500', 'border-amber-300', 'hover:bg-amber-50');
-                preloadBtn.classList.remove('bg-green-100', 'text-green-600', 'border-green-300', 'cursor-not-allowed');
+                preloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 preloadBtn.disabled = false;
             }
         }
@@ -541,7 +531,6 @@
             modal.classList.remove('flex');
         }
 
-        // 2. QR 팝업 제어 함수
         function showQRPopup() {
             const qrModal = document.getElementById('qr-modal');
             qrModal.classList.remove('hidden');
@@ -556,27 +545,27 @@
 
         // Initialize state on load
         window.onload = () => {
-            // URL 파라미터를 분석하여 학생 모바일 화면인지, 선생님 발표 화면인지 구분합니다.
             const urlParams = new URLSearchParams(window.location.search);
             const isStudentMode = urlParams.get('mode') === 'student';
             
             if (isStudentMode) {
-                // 학생 화면: 발표 화면을 지우고 사연 작성 화면을 띄웁니다.
-                document.body.innerHTML = '';
+                // 버그 수정: body를 삭제하지 않고 라디오 화면(선생님용) 요소들만 숨깁니다!
+                document.querySelector('header').style.display = 'none';
+                document.querySelector('main').style.display = 'none';
+                document.querySelector('footer').style.display = 'none';
+                
                 const studentOverlay = document.getElementById('student-mode-overlay');
                 studentOverlay.classList.remove('hidden');
                 studentOverlay.classList.add('flex');
-                document.body.appendChild(studentOverlay);
                 
-                // 학생 화면에 현재 접속 중인 방 코드 표시
-                globalRoomCode = urlParams.get('room') || 'default';
+                globalRoomCode = urlParams.get('room') || '기본방';
+                const hostId = urlParams.get('host');
                 document.getElementById('student-room-display').innerText = globalRoomCode;
                 
-                // 학생용 Firebase 실시간 채팅 초기화 (방 코드 포함)
-                initFirebaseAndChat(true, globalRoomCode);
+                // 학생 화면에서 선생님 PC로 다이렉트 접속 시도!
+                initStudentPeer(hostId);
             } else {
                 updateSlideDisplay();
-                // 선생님 화면일 때는 1페이지에서 Start 버튼을 누를 때 QR과 Firebase가 초기화됩니다.
             }
         };
 
@@ -592,70 +581,50 @@
             }
         });
 
-        // --- Firebase & Realtime Chat Logic ---
-        let db, auth;
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'radio-app-' + Math.floor(Math.random()*100000);
+        // ==========================================
+        // 다이렉트 통신 (P2P 실시간 채팅) 로직
+        // ==========================================
         let chatMessages = [];
-        let unsubscribeSnapshot = null; // 리스너 해제용 변수
+        let peer = null;
+        let hostConnection = null;
 
-        async function initFirebaseAndChat(isStudentMode, roomCode) {
-            try {
-                if (typeof __firebase_config !== 'undefined') {
-                    // Firebase 중복 초기화 방지
-                    if (!isFirebaseInitialized) {
-                        const firebaseConfig = JSON.parse(__firebase_config);
-                        const app = initializeApp(firebaseConfig);
-                        db = getFirestore(app);
-                        auth = getAuth(app);
-                        isFirebaseInitialized = true;
-                    }
-
-                    if (typeof __initial_auth_token !== 'undefined' && !auth.currentUser) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else if (!auth.currentUser) {
-                        await signInAnonymously(auth);
-                    }
-                    startChatListener(isStudentMode, roomCode);
-                } else {
-                    console.log("Firebase가 연결되지 않았습니다.");
-                    if(isStudentMode) showModal("현재 로컬 파일 상태입니다. 실시간 기능은 웹 환경(Preview)에서만 작동합니다.");
-                }
-            } catch (e) {
-                console.error("Firebase init failed:", e);
-            }
-        }
-
-        // 실시간으로 데이터베이스 변경을 감지하여 채팅창을 업데이트합니다.
-        function startChatListener(isStudentMode, roomCode) {
-            if(!db || !auth.currentUser) return;
+        // 1. 선생님(호스트) 화면 준비
+        function initHostPeer(hostId) {
+            peer = new Peer(hostId);
+            peer.on('open', (id) => {
+                console.log('선생님 방송국 수신 대기 중:', id);
+            });
             
-            // 기존 리스너가 있다면 해제 (Start 버튼을 여러 번 누를 경우 겹침 방지)
-            if (unsubscribeSnapshot) {
-                unsubscribeSnapshot();
-            }
-
-            // 방 코드에 따라 완전히 독립적인 컬렉션(채팅방) 사용
-            const collectionName = 'radio_messages_' + roomCode;
-            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
-            
-            unsubscribeSnapshot = onSnapshot(messagesRef, (snapshot) => {
-                chatMessages = [];
-                snapshot.forEach(doc => {
-                    chatMessages.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // 시간 순서대로 정렬
-                chatMessages.sort((a, b) => a.timestamp - b.timestamp);
-                
-                if(!isStudentMode) {
+            // 학생 폰에서 연결이 들어왔을 때
+            peer.on('connection', (conn) => {
+                // 사연 데이터가 전송되었을 때
+                conn.on('data', (data) => {
+                    chatMessages.push(data);
                     renderChatMessages();
-                }
-            }, (error) => {
-                console.error("채팅 로딩 에러:", error);
+                });
             });
         }
 
-        // 채팅창 그리기
+        // 2. 학생(클라이언트) 화면 준비
+        function initStudentPeer(hostId) {
+            if(!hostId) return;
+            
+            peer = new Peer();
+            peer.on('open', () => {
+                // 선생님 화면(호스트ID)으로 직접 연결
+                hostConnection = peer.connect(hostId);
+                
+                hostConnection.on('open', () => {
+                    console.log('선생님 라디오 방송국과 다이렉트 연결 성공!');
+                });
+                
+                hostConnection.on('error', () => {
+                    showModal("선생님 화면과 연결할 수 없습니다. 다시 QR코드를 스캔해주세요.");
+                });
+            });
+        }
+
+        // 3. 실시간 사연 화면에 그리기 (선생님 화면)
         function renderChatMessages() {
             const container = document.getElementById('chat-messages-container');
             if(!container) return;
@@ -677,52 +646,45 @@
                 container.appendChild(msgEl);
             });
             
-            // 새 글이 올라오면 스크롤을 맨 아래로 내림
+            // 새 사연이 오면 스크롤 맨 밑으로
             container.scrollTop = container.scrollHeight;
         }
 
-        // 학생이 사연 보내기 버튼을 눌렀을 때 실행되는 함수
-        window.submitStudentMessage = async function() {
+        // 4. 학생 사연 전송 (학생 화면)
+        window.submitStudentMessage = function() {
             const nameInput = document.getElementById('student-name-input').value.trim() || '익명 친구';
             const msgInput = document.getElementById('student-msg-input').value.trim();
             const btn = document.getElementById('submit-msg-btn');
             
             if(!msgInput) return;
             
-            if(!db || !auth.currentUser) {
-                showModal("연결 상태가 불안정합니다. 새로고침 후 다시 시도해주세요.");
+            // 연결 확인
+            if(!hostConnection || !hostConnection.open) {
+                showModal("선생님 화면과 연결 중이거나 연결이 끊어졌습니다.\n라디오가 시작되었는지 확인 후 화면을 새로고침해주세요!");
                 return;
             }
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
-            try {
-                // 데이터베이스에 메시지 추가 (학생이 접속한 방 코드의 컬렉션에 추가)
-                const collectionName = 'radio_messages_' + globalRoomCode;
-                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
-                await addDoc(messagesRef, {
-                    text: msgInput,
-                    author: nameInput,
-                    timestamp: Date.now()
-                });
-                
-                // 전송 성공 시 입력창 초기화 및 성공 피드백 표시
-                document.getElementById('student-msg-input').value = '';
-                
-                const feedback = document.getElementById('success-feedback');
-                feedback.classList.remove('hidden');
-                setTimeout(() => feedback.classList.add('hidden'), 3000);
-            } catch(e) {
-                console.error("전송 실패:", e);
-                showModal("전송에 실패했습니다.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '사연 보내기 <i class="fa-solid fa-paper-plane"></i>';
-            }
+            // 서버(데이터베이스)를 거치지 않고 선생님 PC로 직접 쏩니다!
+            hostConnection.send({
+                text: msgInput,
+                author: nameInput,
+                timestamp: Date.now()
+            });
+            
+            // 전송 완료 처리
+            document.getElementById('student-msg-input').value = '';
+            const feedback = document.getElementById('success-feedback');
+            feedback.classList.remove('hidden');
+            setTimeout(() => feedback.classList.add('hidden'), 3000);
+            
+            btn.disabled = false;
+            btn.innerHTML = '사연 보내기 <i class="fa-solid fa-paper-plane"></i>';
         };
 
-        // 해킹(XSS 공격) 방지용 특수문자 변환 함수
+        // 보안 변환 (XSS 해킹 방지)
         function escapeHtml(unsafe) {
             return (unsafe || '')
                  .replace(/&/g, "&amp;")
