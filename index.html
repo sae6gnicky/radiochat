@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보이는 라디오 고민상담소</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: 'Jua' for a friendly, handwritten vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            background-color: #fff9f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling, act like a presentation */
+        }
+        
+        /* Slide transition animations */
+        .slide {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: translateY(20px);
+        }
+        
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Editable title styling */
+        .editable-title {
+            border-bottom: 3px dashed #fcd34d;
+            transition: all 0.3s;
+            padding: 0 10px;
+        }
+        .editable-title:focus {
+            outline: none;
+            border-bottom: 3px solid #fbbf24;
+            background-color: rgba(253, 230, 138, 0.2);
+            border-radius: 8px;
+        }
+
+        /* Pulsing dot for "ON AIR" */
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .on-air-dot {
+            animation: pulse-red 2s infinite;
+        }
+
+        /* Glassmorphism for bottom bar */
+        .glass-bar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Chat scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-gradient-to-br from-amber-50 to-orange-100 text-gray-800">
+
+    <!-- Background Music Element (Looping) -->
+    <!-- Used raw.githubusercontent.com link so the audio plays directly -->
+    <audio id="bg-music" loop>
+        <!-- 4. 음악 주소 radiochat으로 변경 -->
+        <source src="https://raw.githubusercontent.com/sae6gnicky/radiochat/main/radio.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Top Header / ON AIR Sign -->
+    <header class="w-full p-4 px-6 md:p-6 flex justify-between items-center absolute top-0 left-0 right-0 z-10 pointer-events-none">
+        <div class="text-orange-400 opacity-80 text-4xl md:text-5xl drop-shadow-md">
+            <i class="fa-solid fa-headphones-simple"></i>
+        </div>
+        <div class="flex items-center gap-3 md:gap-4 bg-white/90 px-6 py-2 md:px-8 md:py-3 rounded-full shadow-lg border-2 border-red-200 pointer-events-auto">
+            <div class="w-4 h-4 md:w-5 md:h-5 bg-red-500 rounded-full on-air-dot"></div>
+            <span class="text-red-500 font-black tracking-[0.2em] text-2xl md:text-3xl drop-shadow-sm">ON AIR</span>
+        </div>
+    </header>
+
+    <!-- Main Presentation Area -->
+    <main id="presentation-area" class="flex-grow flex items-center justify-center p-4 pt-20 pb-20 md:p-8 md:pt-24 md:pb-20">
+        
+        <!-- Slide 1: Title & Start -->
+        <div id="slide-1" class="slide active flex-col items-center text-center w-full max-w-4xl">
+            
+            <!-- Rounded White Box for Title & Settings -->
+            <div class="bg-white/80 backdrop-blur-sm p-6 md:p-10 rounded-[3rem] shadow-2xl border-8 border-white/60 mb-6 w-full max-w-3xl mx-auto flex flex-col items-center">
+                <!-- Editable Title (크기 복구 및 확대) -->
+                <h1 id="radio-title" contenteditable="true" spellcheck="false" class="editable-title text-6xl md:text-8xl font-bold text-gray-800 mb-4 leading-tight inline-block w-full">
+                    5학년 2반<br>고민상담소
+                </h1>
+                
+                <p class="text-amber-600 text-sm md:text-base bg-orange-50 px-4 py-2 rounded-full inline-block font-semibold shadow-inner mb-6">
+                    <i class="fa-solid fa-pen mr-2"></i>제목을 클릭해서 수정할 수 있어요!
+                </p>
+
+                <!-- 가로형 암호 설정 박스 (세로 공간 절약) -->
+                <div class="w-full max-w-lg bg-white/70 px-5 py-3 rounded-full shadow-sm border border-amber-200 flex flex-row items-center gap-3">
+                    <label for="room-code-input" class="text-amber-600 font-bold text-base md:text-lg whitespace-nowrap flex-shrink-0">
+                        <i class="fa-solid fa-key mr-1"></i> 채팅방 암호 :
+                    </label>
+                    <input type="text" id="room-code-input" placeholder="예: 5학년2반 (빈칸=랜덤)" class="flex-1 min-w-0 text-center text-base md:text-lg px-4 py-2 bg-white border-2 border-amber-300 rounded-xl focus:outline-none focus:border-orange-500 text-gray-700 transition">
+                </div>
+            </div>
+
+            <!-- Start 버튼 그룹 -->
+            <div class="flex flex-col md:flex-row gap-4 mt-2 items-center justify-center">
+                <button type="button" onclick="startRadio()" class="group relative px-10 py-4 bg-gradient-to-r from-orange-400 to-amber-400 text-white text-2xl md:text-3xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                    Start!
+                    <div class="absolute inset-0 h-full w-full rounded-full border-4 border-white/30 group-hover:animate-ping opacity-0 group-hover:opacity-100"></div>
+                </button>
+                
+                <button type="button" id="preload-cam-btn" onclick="startCamera(true)" class="px-6 py-4 bg-white text-amber-500 border-2 border-amber-300 rounded-full hover:bg-amber-50 transition-all shadow-xl font-bold inline-flex items-center gap-2 text-xl md:text-2xl">
+                    <i class="fa-solid fa-video"></i> 카메라 미리 켜기
+                </button>
+            </div>
+        </div>
+
+        <!-- Slide 2: Long Text -->
+        <div id="slide-2" class="slide flex-col items-center w-full max-w-5xl">
+            <div class="bg-white/90 p-10 md:p-16 rounded-3xl shadow-xl border-4 border-amber-100 relative">
+                <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-amber-400 text-white px-8 py-3 rounded-full text-2xl shadow-lg whitespace-nowrap">
+                    우리반 고민 사연을 보내주세요
+                </div>
+                <div class="text-center mt-6 space-y-6 text-2xl md:text-3xl leading-relaxed text-gray-700">
+                    <p>우리반 친구들이 여러분의<br><span class="text-amber-500 font-bold text-4xl">마음과 고민에 함께 머물러 줄 거에요.</span></p>
+                    <p class="text-gray-600 text-xl md:text-2xl">상처도 꽁꽁 감추면 곪고 덧나듯이<br>힘든 일도 마찬가지랍니다.</p>
+                    <p>꺼내 놓고 훌훌 털어버리면<br><span class="text-orange-500">마음이 훨씬 가벼워질 거에요.</span></p>
+                    <div class="mt-8 pt-8 border-t-2 border-dashed border-gray-300">
+                        <p class="text-3xl md:text-4xl text-gray-800">
+                            서로의 고민에 진심으로 응답해줄 것을<br>
+                            <i class="fa-solid fa-handshake-angle text-amber-500 mr-2"></i>우리 모두 이 자리에서 약속해요!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Welcome Message -->
+        <div id="slide-3" class="slide flex-col items-center text-center w-full">
+            <div class="text-amber-400 text-8xl mb-8 opacity-80"><i class="fa-solid fa-broadcast-tower"></i></div>
+            <div class="bg-white/80 backdrop-blur-sm p-12 md:p-16 rounded-[3rem] shadow-2xl border-8 border-white/60 w-full max-w-4xl mx-auto">
+                <h2 class="text-6xl md:text-8xl text-gray-800 leading-tight font-bold">
+                    보이는 라디오에<br>오신 걸 환영 합니다!
+                </h2>
+            </div>
+        </div>
+
+        <!-- Slide 4: Dreaming Radio -->
+        <!-- Slide 4: Dreaming Radio -->
+        <div id="slide-4" class="slide flex-col items-center justify-center w-full h-full text-center">
+            <div class="relative">
+                <div class="absolute -inset-4 bg-gradient-to-r from-amber-300 to-orange-400 blur-xl opacity-50 rounded-full"></div>
+                <h2 class="relative text-7xl md:text-9xl text-white font-bold tracking-wider" style="text-shadow: 2px 4px 10px rgba(0,0,0,0.2);">
+                    꿈꾸는 라디오
+                </h2>
+            </div>
+            <div class="mt-12 text-2xl text-gray-600">
+                <i class="fa-solid fa-stars text-amber-400"></i> 사연을 만나볼 준비가 되었나요? <i class="fa-solid fa-stars text-amber-400"></i>
+            </div>
+        </div>
+
+        <!-- Slide 5: Camera Box (For Letters) -->
+        <div id="slide-5" class="slide flex-col items-center w-full h-full pb-2 relative">
+            <!-- 제목을 위로 올려 헤더 라인(ON AIR)과 맞춤 -->
+            <h2 class="absolute -top-16 md:-top-20 left-1/2 transform -translate-x-1/2 text-3xl md:text-4xl text-gray-800 flex items-center gap-3 font-bold whitespace-nowrap z-20">
+                <i class="fa-solid fa-envelope-open-text text-amber-500"></i> 오늘의 사연
+            </h2>
+            
+            <!-- 투명한 레이아웃 컨테이너 (flex justify-start로 좌측 정렬) -->
+            <div class="w-full h-full relative px-2 md:px-4 pb-2 md:pb-4 flex justify-start">
+                
+                <!-- Left: Camera Screen (Window) - 우측 여백을 위해 너비 75~85%로 조정 -->
+                <div class="w-[85%] md:w-[80%] lg:w-[75%] h-full bg-gray-100 rounded-2xl overflow-hidden relative flex flex-col shadow-2xl border-4 border-gray-300">
+                    
+                    <!-- Window Content -->
+                    <div class="flex-grow relative flex items-center justify-center bg-gray-100">
+                        <!-- 'object-cover'를 통해 까만 여백 없이 화면을 꽉 채움 -->
+                        <video id="webcam-video" autoplay playsinline class="absolute inset-0 w-full h-full object-cover hidden"></video>
+                        
+                        <!-- Initial State / Start Button -->
+                        <div id="camera-overlay" class="z-10 flex flex-col items-center text-gray-500">
+                            <i class="fa-solid fa-camera-web text-6xl md:text-7xl mb-4 opacity-40"></i>
+                            <p class="mb-4 text-xl md:text-2xl font-bold text-gray-600">학생들의 사연을 비춰주세요</p>
+                            <button type="button" onclick="startCamera()" class="px-6 py-3 md:px-8 md:py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xl md:text-2xl shadow-lg transition flex items-center gap-3">
+                                <i class="fa-solid fa-video"></i> 화상기/카메라 켜기
+                            </button>
+                        </div>
+                        
+                        <button type="button" onclick="stopCamera()" id="stop-cam-btn" class="hidden absolute top-4 left-4 z-20 px-4 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-full shadow-lg backdrop-blur transition font-bold text-base">
+                            <i class="fa-solid fa-video-slash"></i> 카메라 끄기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Left: DJ Graphic (Overlapping, Size 80%) -->
+                <!-- 3. 왼쪽 카메라 화면 위로 겹치도록 이동 및 크기 80% 축소 (scale-[0.8]), 폴더 주소 변경 -->
+                <div class="absolute -bottom-2 -left-2 md:-bottom-4 md:-left-4 lg:-left-6 w-[55%] md:w-[450px] lg:w-[500px] z-30 pointer-events-none scale-[0.8] origin-bottom-left">
+                    <img src="https://raw.githubusercontent.com/sae6gnicky/radiochat/main/Gemini_Generated_Image_8oxl2m8oxl2m8oxl.png" alt="라디오 DJ" class="w-full h-auto drop-shadow-2xl object-contain">
+                </div>
+                
+                <!-- 채팅 및 QR코드 컨테이너 -->
+                <div class="absolute top-2 md:top-4 right-2 md:right-6 w-[30%] md:w-[28%] lg:w-[25%] h-[85%] flex flex-col z-20">
+                    <!-- QR 코드 박스 -->
+                    <div class="flex justify-end mb-2">
+                        <!-- 2. 클릭 시 확대 모달 띄우기 (onclick 추가) -->
+                        <div onclick="showQRPopup()" class="bg-white/95 p-2 rounded-2xl shadow-xl border border-amber-100 flex flex-col items-center pointer-events-auto cursor-pointer hover:bg-amber-50 hover:scale-105 transition-transform" title="크게 보기">
+                            <span class="text-[10px] md:text-[11px] font-black text-amber-600 mb-1 tracking-wider whitespace-nowrap">스마트폰으로 사연 보내기</span>
+                            <img id="qr-code-img" src="" alt="QR" class="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-gray-100">
+                            <!-- 방 번호 표시 -->
+                            <span id="display-room-code" class="text-[10px] md:text-[11px] font-bold text-gray-500 mt-1">방: 준비중</span>
+                            <div class="text-[9px] text-gray-400 mt-0.5"><i class="fa-solid fa-magnifying-glass-plus"></i> 클릭해서 확대</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 실시간 채팅 메시지 박스 -->
+                    <div id="chat-messages-container" class="flex-grow bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/60 p-3 flex flex-col gap-3 overflow-y-auto no-scrollbar pb-40 pointer-events-auto">
+                        <div class="text-center text-gray-500 text-xs py-3 bg-white/60 rounded-xl shadow-sm border border-amber-50">
+                            <i class="fa-solid fa-comment-dots text-amber-400 mb-2 text-xl block"></i>
+                            QR코드를 찍고<br>실시간으로 사연을 보내보세요!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Outro -->
+        <div id="slide-6" class="slide flex-col items-center justify-center text-center w-full">
+            <div class="text-orange-400 text-7xl mb-8 animate-bounce"><i class="fa-regular fa-face-smile-wink"></i></div>
+            <div class="bg-white/80 backdrop-blur-sm p-12 md:p-16 rounded-[3rem] shadow-2xl border-8 border-white/60 w-full max-w-4xl mx-auto">
+                <h2 class="text-6xl md:text-8xl text-gray-800 leading-tight font-bold">
+                    다음에 만나요<br>안녕~
+                </h2>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Controls Bar -->
+    <footer class="fixed bottom-0 left-0 right-0 h-16 glass-bar shadow-[0_-10px_40px_rgba(0,0,0,0.05)] flex items-center justify-between px-4 md:px-10 z-20">
+        
+        <!-- Audio Controls -->
+        <div class="flex items-center gap-3">
+            <div class="text-gray-500 text-xs hidden md:block mr-2 font-bold tracking-wide">BGM</div>
+            <button type="button" onclick="playMusic()" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-amber-100 text-gray-700 hover:text-amber-600 rounded-full shadow transition text-sm" title="재생">
+                <i class="fa-solid fa-play"></i>
+            </button>
+            <button type="button" onclick="pauseMusic()" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-amber-100 text-gray-700 hover:text-amber-600 rounded-full shadow transition text-sm" title="일시정지">
+                <i class="fa-solid fa-pause"></i>
+            </button>
+            <button type="button" onclick="stopMusic()" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-500 rounded-full shadow transition text-sm" title="정지">
+                <i class="fa-solid fa-stop"></i>
+            </button>
+            
+            <!-- Music Animation Equalizer (Visual only) -->
+            <div id="music-eq" class="hidden items-end gap-1 h-5 ml-2 md:ml-4">
+                <div class="w-1.5 bg-amber-400 rounded-t-sm animate-[bounce_1s_infinite]"></div>
+                <div class="w-1.5 bg-amber-400 rounded-t-sm animate-[bounce_0.8s_infinite_0.1s]"></div>
+                <div class="w-1.5 bg-amber-400 rounded-t-sm animate-[bounce_1.2s_infinite_0.2s]"></div>
+                <div class="w-1.5 bg-amber-400 rounded-t-sm animate-[bounce_0.9s_infinite_0.3s]"></div>
+            </div>
+        </div>
+
+        <!-- Slide Navigation Controls -->
+        <div class="flex items-center gap-4">
+            <button type="button" onclick="prevSlide()" id="prev-btn" class="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 text-gray-600 hover:bg-amber-50 rounded-full shadow disabled:opacity-30 disabled:cursor-not-allowed transition text-sm">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            
+            <div class="text-base text-gray-600 font-bold w-12 text-center tracking-widest">
+                <span id="current-page">1</span>/6
+            </div>
+            
+            <button type="button" onclick="nextSlide()" id="next-btn" class="w-10 h-10 flex items-center justify-center bg-white border border-gray-200 text-gray-600 hover:bg-amber-50 rounded-full shadow disabled:opacity-30 disabled:cursor-not-allowed transition text-sm">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Custom Modal for Errors/Messages -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center transform scale-100 transition-transform">
+            <div class="text-red-500 text-5xl mb-4"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">알림</h3>
+            <p id="custom-modal-msg" class="text-lg text-gray-600 mb-8">메시지 내용</p>
+            <button type="button" onclick="closeModal()" class="px-8 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-full text-xl transition">
+                확인
+            </button>
+        </div>
+    </div>
+
+    <!-- 학생 사연 입력 모바일 UI (QR로 접속했을 때만 보여짐) -->
+    <div id="student-mode-overlay" class="hidden fixed inset-0 bg-[#fff9f0] z-[100] flex-col p-6 overflow-y-auto">
+        <div class="w-full max-w-md mx-auto flex flex-col gap-6 h-full">
+            <div class="text-center mt-8">
+                <div class="text-orange-400 text-5xl mb-2"><i class="fa-solid fa-radio"></i></div>
+                <h1 class="text-3xl font-bold text-gray-800">우리가 만드는 라디오</h1>
+                <p class="text-gray-500 mt-2">사연과 댓글을 실시간으로 보내주세요!</p>
+                <!-- 새로 추가: 학생 화면에 접속 중인 방 표시 -->
+                <div class="inline-block mt-3 px-4 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-bold shadow-inner">
+                    <i class="fa-solid fa-key mr-1"></i> 현재 접속 방: <span id="student-room-display">...</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-xl flex flex-col gap-4 border border-amber-100">
+                <div>
+                    <label class="block text-sm font-bold text-amber-600 mb-1">누가 보내는 사연인가요? (선택)</label>
+                    <input type="text" id="student-name-input" placeholder="예: 2모둠 철수, 비밀요원" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition text-gray-800">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-amber-600 mb-1">사연 / 하고 싶은 말</label>
+                    <textarea id="student-msg-input" rows="4" placeholder="DJ에게 하고 싶은 말이나 고민 사연을 적어주세요!" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition resize-none text-gray-800"></textarea>
+                </div>
+                <button type="button" id="submit-msg-btn" onclick="submitStudentMessage()" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg hover:opacity-90 transition mt-2 flex items-center justify-center gap-2">
+                    사연 보내기 <i class="fa-solid fa-paper-plane"></i>
+                </button>
+                <div id="success-feedback" class="hidden text-center text-green-500 font-bold mt-2 animate-bounce flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-check-circle"></i> 선생님께 성공적으로 전송되었습니다!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. QR 확대 팝업 모달 추가 -->
+    <div id="qr-modal" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-md items-center justify-center p-6 flex-col">
+        <div class="bg-white rounded-3xl p-8 max-w-2xl w-full h-auto max-h-[90vh] shadow-2xl flex flex-col items-center justify-center relative">
+            <button type="button" onclick="closeQRPopup()" class="absolute top-6 right-6 text-gray-400 hover:text-red-500 text-5xl transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6 text-center">스마트폰으로 사연 보내기</h3>
+            <div class="bg-amber-50 p-6 rounded-2xl mb-6 shadow-inner border-2 border-amber-200">
+                <!-- 고해상도 QR 생성하여 여기에 넣음 -->
+                <img id="qr-modal-img" src="" alt="확대된 QR" class="w-64 h-64 md:w-80 md:h-80 rounded-xl object-contain">
+            </div>
+            <div class="text-2xl md:text-4xl text-gray-700 font-bold bg-amber-100 px-8 py-4 rounded-full shadow-sm border border-amber-300">
+                <i class="fa-solid fa-key text-amber-500"></i> 채팅방 암호: <span id="qr-modal-code" class="text-orange-600"></span>
+            </div>
+            <p class="text-gray-500 mt-6 text-lg md:text-2xl">스마트폰 카메라로 화면의 QR코드를 스캔해주세요!</p>
+        </div>
+    </div>
+
+    <!-- 기존 스크립트를 type="module"로 변경하여 실시간 데이터베이스 연동 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Variables ---
+        let currentSlideIndex = 1;
+        const totalSlides = 6;
+        
+        const audio = document.getElementById('bg-music');
+        const musicEq = document.getElementById('music-eq');
+        
+        let cameraStream = null;
+        const videoElement = document.getElementById('webcam-video');
+        const cameraOverlay = document.getElementById('camera-overlay');
+        const stopCamBtn = document.getElementById('stop-cam-btn');
+        
+        let globalRoomCode = ''; // 방 코드 전역 변수
+        let isFirebaseInitialized = false; // 파이어베이스 중복 초기화 방지
+
+        // Set initial volume
+        audio.volume = 0.4;
+
+        // HTML 태그에서 onclick으로 호출할 수 있도록 함수들을 window에 등록합니다.
+        window.startRadio = startRadio;
+        window.startCamera = startCamera;
+        window.stopCamera = stopCamera;
+        window.playMusic = playMusic;
+        window.pauseMusic = pauseMusic;
+        window.stopMusic = stopMusic;
+        window.prevSlide = prevSlide;
+        window.nextSlide = nextSlide;
+        window.closeModal = closeModal;
+        window.showQRPopup = showQRPopup;
+        window.closeQRPopup = closeQRPopup;
+
+        // --- Slide Navigation Logic ---
+        function updateSlideDisplay() {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            const currentSlide = document.getElementById(`slide-${currentSlideIndex}`);
+            if(currentSlide) currentSlide.classList.add('active');
+            document.getElementById('current-page').innerText = currentSlideIndex;
+            document.getElementById('prev-btn').disabled = (currentSlideIndex === 1);
+            document.getElementById('next-btn').disabled = (currentSlideIndex === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < totalSlides) {
+                currentSlideIndex++;
+                updateSlideDisplay();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 1) {
+                currentSlideIndex--;
+                updateSlideDisplay();
+            }
+        }
+
+        function startRadio() {
+            // 방 코드 설정 (입력 안하면 랜덤 4자리 지정)
+            const inputCode = document.getElementById('room-code-input').value.trim();
+            globalRoomCode = inputCode || Math.floor(1000 + Math.random() * 9000).toString();
+            
+            // QR 코드 및 방 번호 표시 업데이트 (방 코드를 URL에 포함)
+            const currentUrl = window.location.href.split('?')[0];
+            const studentUrl = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'mode=student&room=' + encodeURIComponent(globalRoomCode);
+            
+            // 로컬 주소(file, blob, about)로 열었을 경우 스마트폰 접속 불가 안내
+            if (currentUrl.startsWith('file:') || currentUrl.startsWith('blob:') || currentUrl.startsWith('about:')) {
+                setTimeout(() => {
+                    showModal("현재 내 컴퓨터 내부 주소로 실행 중이라 스마트폰에서 QR코드로 접속할 수 없습니다.\n\n학생들과 사용하거나 공유하려면 이 HTML 파일을 인터넷(예: GitHub Pages)에 올려주세요!");
+                }, 1000);
+            }
+
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(studentUrl)}`;
+            document.getElementById('qr-code-img').src = qrUrl;
+            document.getElementById('qr-modal-img').src = qrUrl; // 팝업 모달에도 QR 주소 적용
+            
+            document.getElementById('display-room-code').innerText = '방: ' + globalRoomCode;
+            document.getElementById('qr-modal-code').innerText = globalRoomCode; // 팝업 모달에도 방 번호 적용
+
+            // Firebase 채팅 초기화 (이제 방 코드를 가지고 시작)
+            initFirebaseAndChat(false, globalRoomCode);
+
+            nextSlide();
+            playMusic(); 
+        }
+
+        // --- Audio Control Logic ---
+        function playMusic() {
+            audio.play().then(() => {
+                musicEq.style.display = 'flex';
+            }).catch(error => {
+                console.log("Audio play prevented:", error);
+            });
+        }
+
+        function pauseMusic() {
+            audio.pause();
+            musicEq.style.display = 'none';
+        }
+
+        function stopMusic() {
+            audio.pause();
+            audio.currentTime = 0;
+            musicEq.style.display = 'none';
+        }
+
+        audio.addEventListener('play', () => { musicEq.style.display = 'flex'; });
+        audio.addEventListener('pause', () => { musicEq.style.display = 'none'; });
+
+        // --- Camera / WebRTC Logic ---
+        async function startCamera(isPreload = false) {
+            if (cameraStream) return;
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } 
+                });
+                
+                videoElement.srcObject = cameraStream;
+                videoElement.classList.remove('hidden');
+                cameraOverlay.classList.add('hidden');
+                stopCamBtn.classList.remove('hidden');
+                
+                if (isPreload) {
+                    const preloadBtn = document.getElementById('preload-cam-btn');
+                    if (preloadBtn) {
+                        preloadBtn.innerHTML = '<i class="fa-solid fa-check"></i> 카메라 연결됨';
+                        preloadBtn.classList.remove('text-amber-500', 'border-amber-300', 'hover:bg-amber-50');
+                        preloadBtn.classList.add('bg-green-100', 'text-green-600', 'border-green-300', 'cursor-not-allowed');
+                        preloadBtn.disabled = true;
+                    }
+                    showModal("카메라(실물화상기)가 미리 연결되었습니다!\n5번째 '오늘의 사연' 페이지로 이동하면 바로 화면이 나옵니다.");
+                }
+            } catch (err) {
+                console.error("Camera access error:", err);
+                showModal("카메라(실물화상기)를 찾을 수 없거나 접근 권한이 없습니다. 브라우저 설정을 확인해주세요.");
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                cameraStream = null;
+            }
+            videoElement.classList.add('hidden');
+            cameraOverlay.classList.remove('hidden');
+            stopCamBtn.classList.add('hidden');
+            
+            const preloadBtn = document.getElementById('preload-cam-btn');
+            if (preloadBtn) {
+                preloadBtn.innerHTML = '<i class="fa-solid fa-video"></i> 카메라 미리 켜기';
+                preloadBtn.classList.add('text-amber-500', 'border-amber-300', 'hover:bg-amber-50');
+                preloadBtn.classList.remove('bg-green-100', 'text-green-600', 'border-green-300', 'cursor-not-allowed');
+                preloadBtn.disabled = false;
+            }
+        }
+
+        function showModal(msg) {
+            document.getElementById('custom-modal-msg').innerText = msg;
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // 2. QR 팝업 제어 함수
+        function showQRPopup() {
+            const qrModal = document.getElementById('qr-modal');
+            qrModal.classList.remove('hidden');
+            qrModal.classList.add('flex');
+        }
+
+        function closeQRPopup() {
+            const qrModal = document.getElementById('qr-modal');
+            qrModal.classList.add('hidden');
+            qrModal.classList.remove('flex');
+        }
+
+        // Initialize state on load
+        window.onload = () => {
+            // URL 파라미터를 분석하여 학생 모바일 화면인지, 선생님 발표 화면인지 구분합니다.
+            const urlParams = new URLSearchParams(window.location.search);
+            const isStudentMode = urlParams.get('mode') === 'student';
+            
+            if (isStudentMode) {
+                // 학생 화면: 발표 화면을 지우고 사연 작성 화면을 띄웁니다.
+                document.body.innerHTML = '';
+                const studentOverlay = document.getElementById('student-mode-overlay');
+                studentOverlay.classList.remove('hidden');
+                studentOverlay.classList.add('flex');
+                document.body.appendChild(studentOverlay);
+                
+                // 학생 화면에 현재 접속 중인 방 코드 표시
+                globalRoomCode = urlParams.get('room') || 'default';
+                document.getElementById('student-room-display').innerText = globalRoomCode;
+                
+                // 학생용 Firebase 실시간 채팅 초기화 (방 코드 포함)
+                initFirebaseAndChat(true, globalRoomCode);
+            } else {
+                updateSlideDisplay();
+                // 선생님 화면일 때는 1페이지에서 Start 버튼을 누를 때 QR과 Firebase가 초기화됩니다.
+            }
+        };
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const activeId = document.activeElement.id;
+            if(activeId === 'radio-title' || activeId === 'student-name-input' || activeId === 'student-msg-input') return;
+
+            if (e.key === 'ArrowRight' || e.key === 'Spacebar' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // --- Firebase & Realtime Chat Logic ---
+        let db, auth;
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'radio-app-' + Math.floor(Math.random()*100000);
+        let chatMessages = [];
+        let unsubscribeSnapshot = null; // 리스너 해제용 변수
+
+        async function initFirebaseAndChat(isStudentMode, roomCode) {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    // Firebase 중복 초기화 방지
+                    if (!isFirebaseInitialized) {
+                        const firebaseConfig = JSON.parse(__firebase_config);
+                        const app = initializeApp(firebaseConfig);
+                        db = getFirestore(app);
+                        auth = getAuth(app);
+                        isFirebaseInitialized = true;
+                    }
+
+                    if (typeof __initial_auth_token !== 'undefined' && !auth.currentUser) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else if (!auth.currentUser) {
+                        await signInAnonymously(auth);
+                    }
+                    startChatListener(isStudentMode, roomCode);
+                } else {
+                    console.log("Firebase가 연결되지 않았습니다.");
+                    if(isStudentMode) showModal("현재 로컬 파일 상태입니다. 실시간 기능은 웹 환경(Preview)에서만 작동합니다.");
+                }
+            } catch (e) {
+                console.error("Firebase init failed:", e);
+            }
+        }
+
+        // 실시간으로 데이터베이스 변경을 감지하여 채팅창을 업데이트합니다.
+        function startChatListener(isStudentMode, roomCode) {
+            if(!db || !auth.currentUser) return;
+            
+            // 기존 리스너가 있다면 해제 (Start 버튼을 여러 번 누를 경우 겹침 방지)
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+            }
+
+            // 방 코드에 따라 완전히 독립적인 컬렉션(채팅방) 사용
+            const collectionName = 'radio_messages_' + roomCode;
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+            
+            unsubscribeSnapshot = onSnapshot(messagesRef, (snapshot) => {
+                chatMessages = [];
+                snapshot.forEach(doc => {
+                    chatMessages.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 시간 순서대로 정렬
+                chatMessages.sort((a, b) => a.timestamp - b.timestamp);
+                
+                if(!isStudentMode) {
+                    renderChatMessages();
+                }
+            }, (error) => {
+                console.error("채팅 로딩 에러:", error);
+            });
+        }
+
+        // 채팅창 그리기
+        function renderChatMessages() {
+            const container = document.getElementById('chat-messages-container');
+            if(!container) return;
+            
+            container.innerHTML = '';
+            
+            if(chatMessages.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 text-xs py-3 bg-white/60 rounded-xl shadow-sm border border-amber-50"><i class="fa-solid fa-comment-dots text-amber-400 mb-2 text-xl block"></i>QR코드를 찍고<br>실시간으로 사연을 보내보세요!</div>';
+                return;
+            }
+
+            chatMessages.forEach(msg => {
+                const msgEl = document.createElement('div');
+                msgEl.className = 'bg-white/95 p-3 rounded-xl shadow border border-amber-100 animate-[slideIn_0.3s_ease-out] flex flex-col break-words';
+                msgEl.innerHTML = `
+                    <div class="font-black text-amber-600 text-xs mb-1 flex items-center gap-1"><i class="fa-solid fa-user-circle"></i> ${escapeHtml(msg.author || '익명 친구')}</div>
+                    <div class="text-gray-800 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(msg.text)}</div>
+                `;
+                container.appendChild(msgEl);
+            });
+            
+            // 새 글이 올라오면 스크롤을 맨 아래로 내림
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 학생이 사연 보내기 버튼을 눌렀을 때 실행되는 함수
+        window.submitStudentMessage = async function() {
+            const nameInput = document.getElementById('student-name-input').value.trim() || '익명 친구';
+            const msgInput = document.getElementById('student-msg-input').value.trim();
+            const btn = document.getElementById('submit-msg-btn');
+            
+            if(!msgInput) return;
+            
+            if(!db || !auth.currentUser) {
+                showModal("연결 상태가 불안정합니다. 새로고침 후 다시 시도해주세요.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
+
+            try {
+                // 데이터베이스에 메시지 추가 (학생이 접속한 방 코드의 컬렉션에 추가)
+                const collectionName = 'radio_messages_' + globalRoomCode;
+                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+                await addDoc(messagesRef, {
+                    text: msgInput,
+                    author: nameInput,
+                    timestamp: Date.now()
+                });
+                
+                // 전송 성공 시 입력창 초기화 및 성공 피드백 표시
+                document.getElementById('student-msg-input').value = '';
+                
+                const feedback = document.getElementById('success-feedback');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            } catch(e) {
+                console.error("전송 실패:", e);
+                showModal("전송에 실패했습니다.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '사연 보내기 <i class="fa-solid fa-paper-plane"></i>';
+            }
+        };
+
+        // 해킹(XSS 공격) 방지용 특수문자 변환 함수
+        function escapeHtml(unsafe) {
+            return (unsafe || '')
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
